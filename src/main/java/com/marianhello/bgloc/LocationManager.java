@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class LocationManager {
-    private static final float MIN_ACCURACY_IN_METERS = 30;
+    private static final float MIN_ACCURACY_IN_METERS = 20.0f;
 
     private Context mContext;
     private static LocationManager mLocationManager;
@@ -112,11 +112,12 @@ public class LocationManager {
     }
 
     static class CurrentLocationListener implements LocationListener {
-        private static final int MAX_ATTEMPTS = 5;
+        private static final int MAX_ATTEMPTS = 3;
 
         Location mLocation = null;
         final CountDownLatch mCountDownLatch = new CountDownLatch(1);
         private int currentAttempts = 0;
+        private Location bestLocation;
 
         @Override
         public void onLocationChanged(Location location) {
@@ -124,8 +125,12 @@ public class LocationManager {
                 mLocation = location;
                 mCountDownLatch.countDown();
             } else {
+                if (bestLocation == null || location.getAccuracy() < bestLocation.getAccuracy()) {
+                    bestLocation = location;
+                }
                 currentAttempts = currentAttempts + 1;
                 if (currentAttempts >= MAX_ATTEMPTS) {
+                    mLocation = bestLocation;
                     mCountDownLatch.countDown();
                 }
             }
